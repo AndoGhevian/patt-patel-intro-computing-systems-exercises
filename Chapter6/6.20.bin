@@ -1,0 +1,243 @@
+; 3
+0011 0000 0000 0000 ; start x3000
+0101 000 000 1 00000
+1010 000   010010001 ; R0 <- Mem[4000] dividend
+1010 001   010010001 ; R1 <- Mem[4001] divisor
+
+; 3 Check divison by zero
+0001 001 001 1 00000 ; R1 <- R1
+0000 010   000000001 ; BRz DivByZero
+0000 111   000101011 ; BRnzp EndDivByZero
+
+; 3 DivByZero
+0001 000 000 1 00000 ; R0 <- R0
+0000 010   000011100 ; BRz DivZeroByZero
+0000 100   000001110 ; BRn DivNegativeByZero
+
+; 4 DivPositiveByZero = +Infinity
+0101 000 000 1 00000 ; R0 <- 0
+0001 000 000 1 00001 ; R0 <- 1
+0101 100 100 1 00000 ; R4 <- 0
+0001 100 100 1 01111 ; R4 <- 15
+; 5 Shift Loop Test (SHL R0 15)
+0001 100 100 1 00000 ; R4 <- R4
+0000 010   000000011 ; BRz End Shift Loop
+0001 000 000 0 00000 ; R0 <- R0 + R0
+0001 100 100 1 11111 ; R4 <- R4 - 1
+0000 111   111111011 ; BRnzp Shift Loop Test
+; End Shift Loop
+
+; 5 R0 <- +Infinity
+1001 000 000  111111 ; R0 <- Not(R0)
+0101 001 001 1 00000 ; R1 <- 0
+1011 000   010000000 ; Mem[5000] <- R0 quotient
+1011 001   010000000 ; Mem[5001] <- R1 remainder
+1111 0000   00100101 ; HALT R0=+Infinity R1=0                                          HALT
+
+; 4 DivNegativeByZero = -Infinity
+0101 000 000 1 00000 ; R0 <- 0
+0001 000 000 1 00001 ; R0 <- 1
+0101 100 100 1 00000 ; R4 <- 0
+0001 100 100 1 01111 ; R4 <- 15
+; 5 Shift Loop Test (SHL R0 15)
+0001 100 100 1 00000 ; R4 <- R4
+0000 010   000000011 ; BRz End Shift Loop
+0001 000 000 0 00000 ; R0 <- R0 + R0
+0001 100 100 1 11111 ; R4 <- R4 - 1
+0000 111   111111011 ; BRnzp Shift Loop Test
+; End Shift Loop
+
+; 4
+0101 001 001 1 00000 ; R1 <- 0
+1011 000   001110011 ; Mem[5000] <- R0 quotient
+1011 001   001110011 ; Mem[5001] <- R1 remainder
+1111 0000   00100101 ; HALT R0=-Infinity R1=0                                           HALT
+
+; 4 DivZeroByZero = [-Infinity, +Infinity] (which is undefined)
+0101 000 000 1 00000 ; R0 <- 0
+0001 000 000 1 00001 ; R0 <- 1
+0101 100 100 1 00000 ; R4 <- 0
+0001 100 100 1 01111 ; R4 <- 15
+; 5 Shift Loop Test (SHL R0 15)
+0001 100 100 1 00000 ; R4 <- R4
+0000 010   000000011 ; BRz End Shift Loop
+0001 000 000 0 00000 ; R0 <- R0 + R0
+0001 100 100 1 11111 ; R4 <- R4 - 1
+0000 111   111111011 ; BRnzp Shift Loop Test
+; End Shift Loop
+
+; 4 R1 <- +Infinity
+1001 001 000  111111 ; R1 <- Not(R0)
+
+1011 000   001100110 ; Mem[5000] <- R0
+1011 001   001100110 ; Mem[5001] <- R1
+1111 0000  00100101 ; HALT [R0, R1] = [-Infinity, +Infinity]                                HALT
+; EndDivByZero
+
+; other nich cases
+
+; Case -MAX/-1
+; 4 Test R0=-MAX
+0001 000 000 1 00000 ; R0 <- R0
+0000 010   000001000 ; BRz EndCase
+0001 100 000 0 00000 ; R4 <- R0 + R0
+0000 101   000000110 ; BRnp EndCase
+; 2 Test R1=-1
+0001 100 001 1 00001 ; R4 <- R1 - (-1)
+0000 101   000000100 ; BRnp EndCase
+; 4 R0 <- +MAX
+1001 000 000  111111 ; R0 <- Not(R0)
+1011 000   001011100 ; Mem[5000] <- R0
+1011 001   001011100 ; Mem[5001] <- R1
+1111 0000   00100101 ; HALT R0=+MAX, R1=-1                                                 HALT
+; EndCase -MAX/-1
+
+; Case ANY/-MAX (-MAX/-MAX, ?/-MAX)
+; 4 Test R1=-MAX
+0001 001 001 1 00000 ; R1 <- R1
+0000 010   000010001 ; BRz EndCase
+0001 100 001 0 00001 ; R4 <- R1 + R1
+0000 101   000001111 ; BRnp EndCase
+; 4 Test R0=-MAX
+0001 000 000 1 00000 ; R0 <- R0
+0000 010   000001000 ; BRz ?/-MAX
+0001 100 000 0 00000 ; R4 <- R0 + R0
+0000 101   000000110 ; BRnp ?/-MAX
+; 6 Case -MAX/-MAX
+0101 000 000 1 00000 ; R0 <- 0
+0001 000 000 1 00001 ; R0 <- 1
+0101 001 001 1 00000 ; R1 <- 0
+1011 000   001001110 ; Mem[5000] <- R0
+1011 001   001001110 ; Mem[5001] <- R1
+1111 0000   00100101 ; HALT R0=1, R1=0                                                  HALT
+; 5 Case ?/-MAX
+0001 001 000 1 00000 ; R1 <- R0
+0101 000 000 1 00000 ; R0 <- 0
+1011 000   001001001 ; Mem[5000] <- R0
+1011 001   001001001 ; Mem[5001] <- R1
+1111 0000   00100101 ; HALT R0=0, R1=R0                                                   HALT
+; EndCase
+
+; modulo division using negative numbers
+; invalid implementation, need fix
+
+; 2 R2 < -|R0|
+0001 000 000 1 00000 ; R0 <- R0
+0000 100   000000011 ; BRn AlreadyNegative
+; 3 MakeNegative
+1001 010 000  111111 ; R2 <- Not(R0)
+0001 010 010 1 00001 ; R2 <- R2 + 1
+0000 111   000000001 ; BRnzp End If
+; 1 AlreadyNegative
+0001 010 000 1 00000 ; R2 <- R0
+; End If
+
+; 2 R3 <- -|R1|
+0001 001 001 1 00000 ; R1 <- R1
+0000 100   000000011 ; BRn AlreadyNegative
+; 3 MakeNegative
+1001 011 001  111111 ; R3 <- Not(R1)
+0001 011 011 1 00001 ; R3 <- R3 + 1
+0000 111   000000001 ; BRnzp End If
+; 1 AlreadyNegative
+0001 011 001 1 00000 ; R3 <- R1
+; End If
+
+; 1 R5 <- zeroed quotient
+0101 101 101 1 00000 ; R5 <- 0
+
+; 4 Test R2 - R3 Outer Loop Test
+1001 100 011  111111 ; R4 <- Not(R3)
+0001 100 100 1 00001 ; R4 <- R4 + 1
+0001 100 010 0 00100 ; R4 <- R2 + R4
+0000 001   000011111 ; BRp Finilize
+; 3 R6 <- 1
+0101 110 110 1 00000 ; R6 <- 0
+0001 110 110 1 00001 ; R6 <- R6 + 1
+
+0001 100 011 1 00000 ; R4 <- R3
+
+; 10 Test R2 - (SHL R3 1) Inner Loop Test
+0001 011 011 0 00011 ; R3 <- R3 + R3 (SHL R3 1)
+1001 011 011  111111 ; R3 <- Not(R3)
+0001 011 011 1 00001 ; R3 <- R3 + 1
+0001 010 010 0 00011 ; R2 <- R2 + R3
+0001 011 011 1 11111 ; R3 <- R3 - 1
+1001 011 011  111111 ; R3 <- Not(R3)
+0001 010 010 1 00000 ; R2 <- R2
+0000 001   000001001 ; BRp End Inner Loop
+
+0001 110 110 0 00110 ; R6 <- R6 + R6
+0001 100 011 1 00000 ; R4 <- R3
+
+; 2 Reset R2 <- -|R0|
+0001 000 000 1 00000 ; R0 <- R0
+0000 001   000000010 ; BRp MakeNegative
+; 2 AlreadyNegative
+0001 010 000 1 00000 ; R2 <- R0
+0000 111   000000010 ; BRnzp End If
+; 2 MakeNegative
+1001 010 000  111111 ; R2 <- Not(R0)
+0001 010 010 1 00001 ; R2 <- R2 + 1
+; 1 End If
+
+0000 111   111101111 ; BRnzp Inner Loop Test
+; 1 End Inner Loop
+
+0001 101 101 0 00110 ; R5 <- R5 + R6 quotient
+; 3 subtract dividable part from R2
+1001 100 100  111111 ; R4 <- Not(R4)
+0001 100 100 1 00001 ; R4 <- R4 + 1
+0001 010 010 0 00100 ; R2 <- R2 + R4
+
+; 2 Reset R3 <- -|R1|
+0001 001 001 1 00000 ; R1 <- R1
+0000 001   000000010 ; BRp MakeNegative
+; 2 AlreadyNegative
+0001 011 001 1 00000 ; R3 <- R1
+0000 111   000000010 ; BRnzp End If
+; 2 MakeNegative
+1001 011 001  111111 ; R3 <- Not(R1)
+0001 011 011 1 00001 ; R3 <- R3 + 1
+; 1 End If
+
+0000 111   111011101 ; BRnzp Outer Loop Test
+
+; Finilize
+; 3 Correct Remainder Sign
+0001 000 000 1 00000 ; R0 <- R0
+0000 001   000000001 ; BRp MakePositiveRemainder
+0000 111   000000010 ; BRnzp End If
+; 2 MakePositiveRemainder
+1001 010 010  111111 ; R2 <- Not(R2)
+0001 010 010 1 00001 ; R2 <- R2 + 1
+; End If
+
+; 2 Correct Quotient Sign
+0001 000 000 1 00000 ; R0 <- R0
+0000 001   000000011 ; BRp CaseR0>0
+; 3 CaseR0<=0
+0001 001 001 1 00000 ; R1 <- R1
+0000 100   000000100 ; BRn NotChangeSign
+0000 111   000000100 ; BRnzp ChangeSign
+; 3 CaseR0>0
+0001 001 001 1 00000 ; R1 <- R1
+0000 001   000000001 ; BRp NotChangeSign
+0000 111   000000001 ; BRnzp ChangeSign
+; 1 NotChangeSign
+0000 111   000000010 ; BRnzp End Finilize
+; 2 ChangeSign
+1001 101 101  111111 ; R5 <- Not(R5)
+0001 101 101 1 00001 ; R5 <- R5 + 1
+; 5 End Finilize
+
+0001 000 101 1 00000 ; R0 <- R5
+0001 001 010 1 00000 ; R1 <- R2
+1011 000   000000100 ; Mem[5000] <- R0
+1011 001   000000100 ; Mem[5001] <- R1
+1111 0000   00100101 ; HALT R0=quotient, R1=remainder                                       HALT
+; 4
+0100 0000 0000 0000 ; X dividend address
+0100 0000 0000 0001 ; Y divisor address
+0101 0000 0000 0000 ; quotient
+0101 0000 0000 0001 ; remainder
