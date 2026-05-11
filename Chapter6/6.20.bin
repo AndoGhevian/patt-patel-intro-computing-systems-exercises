@@ -1,8 +1,8 @@
 ; 3
 0011 0000 0000 0000 ; start x3000
 0101 000 000 1 00000
-1010 000   010010001 ; R0 <- Mem[4000] dividend
-1010 001   010010001 ; R1 <- Mem[4001] divisor
+1010 000   010001111 ; R0 <- Mem[4000] dividend
+1010 001   010001111 ; R1 <- Mem[4001] divisor
 
 ; 3 Check divison by zero
 0001 001 001 1 00000 ; R1 <- R1
@@ -30,8 +30,8 @@
 ; 5 R0 <- +Infinity
 1001 000 000  111111 ; R0 <- Not(R0)
 0101 001 001 1 00000 ; R1 <- 0
-1011 000   010000000 ; Mem[5000] <- R0 quotient
-1011 001   010000000 ; Mem[5001] <- R1 remainder
+1011 000   001111110 ; Mem[5000] <- R0 quotient
+1011 001   001111110 ; Mem[5001] <- R1 remainder
 1111 0000   00100101 ; HALT R0=+Infinity R1=0                                          HALT
 
 ; 4 DivNegativeByZero = -Infinity
@@ -49,8 +49,8 @@
 
 ; 4
 0101 001 001 1 00000 ; R1 <- 0
-1011 000   001110011 ; Mem[5000] <- R0 quotient
-1011 001   001110011 ; Mem[5001] <- R1 remainder
+1011 000   001110001 ; Mem[5000] <- R0 quotient
+1011 001   001110001 ; Mem[5001] <- R1 remainder
 1111 0000   00100101 ; HALT R0=-Infinity R1=0                                           HALT
 
 ; 4 DivZeroByZero = [-Infinity, +Infinity] (which is undefined)
@@ -69,8 +69,8 @@
 ; 4 R1 <- +Infinity
 1001 001 000  111111 ; R1 <- Not(R0)
 
-1011 000   001100110 ; Mem[5000] <- R0
-1011 001   001100110 ; Mem[5001] <- R1
+1011 000   001100100 ; Mem[5000] <- R0
+1011 001   001100100 ; Mem[5001] <- R1
 1111 0000  00100101 ; HALT [R0, R1] = [-Infinity, +Infinity]                                HALT
 ; EndDivByZero
 
@@ -87,8 +87,8 @@
 0000 101   000000100 ; BRnp EndCase
 ; 4 R0 <- +MAX
 1001 000 000  111111 ; R0 <- Not(R0)
-1011 000   001011100 ; Mem[5000] <- R0
-1011 001   001011100 ; Mem[5001] <- R1
+1011 000   001011010 ; Mem[5000] <- R0
+1011 001   001011010 ; Mem[5001] <- R1
 1111 0000   00100101 ; HALT R0=+MAX, R1=-1                                                 HALT
 ; EndCase -MAX/-1
 
@@ -107,14 +107,14 @@
 0101 000 000 1 00000 ; R0 <- 0
 0001 000 000 1 00001 ; R0 <- 1
 0101 001 001 1 00000 ; R1 <- 0
-1011 000   001001110 ; Mem[5000] <- R0
-1011 001   001001110 ; Mem[5001] <- R1
+1011 000   001001100 ; Mem[5000] <- R0
+1011 001   001001100 ; Mem[5001] <- R1
 1111 0000   00100101 ; HALT R0=1, R1=0                                                  HALT
 ; 5 Case ?/-MAX
 0001 001 000 1 00000 ; R1 <- R0
 0101 000 000 1 00000 ; R0 <- 0
-1011 000   001001001 ; Mem[5000] <- R0
-1011 001   001001001 ; Mem[5001] <- R1
+1011 000   001000111 ; Mem[5000] <- R0
+1011 001   001000111 ; Mem[5001] <- R1
 1111 0000   00100101 ; HALT R0=0, R1=R0                                                   HALT
 ; EndCase
 
@@ -150,7 +150,7 @@
 1001 100 011  111111 ; R4 <- Not(R3)
 0001 100 100 1 00001 ; R4 <- R4 + 1
 0001 100 010 0 00100 ; R4 <- R2 + R4
-0000 001   000011111 ; BRp Finilize
+0000 001   000011101 ; BRp Finilize
 ; 3 R6 <- 1
 0101 110 110 1 00000 ; R6 <- 0
 0001 110 110 1 00001 ; R6 <- R6 + 1
@@ -164,25 +164,23 @@
 0001 010 010 0 00011 ; R2 <- R2 + R3
 0001 011 011 1 11111 ; R3 <- R3 - 1
 1001 011 011  111111 ; R3 <- Not(R3)
+0001 011 011 1 00000 ; R3 <- R3
+0000 001   000000111 ; BRp End Inner Loop
 0001 010 010 1 00000 ; R2 <- R2
-0000 001   000001001 ; BRp End Inner Loop
+0000 001   000000100 ; BRp End Inner Loop Reset R2
 
 0001 110 110 0 00110 ; R6 <- R6 + R6
 0001 100 011 1 00000 ; R4 <- R3
 
-; 2 Reset R2 <- -|R0|
-0001 000 000 1 00000 ; R0 <- R0
-0000 001   000000010 ; BRp MakeNegative
-; 2 AlreadyNegative
-0001 010 000 1 00000 ; R2 <- R0
-0000 111   000000010 ; BRnzp End If
-; 2 MakeNegative
-1001 010 000  111111 ; R2 <- Not(R0)
-0001 010 010 1 00001 ; R2 <- R2 + 1
-; 1 End If
+; Reset R2
+0001 010 010 0 00011 ; R2 <- R2 + R3
 
-0000 111   111101111 ; BRnzp Inner Loop Test
-; 1 End Inner Loop
+; Remove 5 instructions "Fill Up Here"
+
+0000 111   111110010 ; BRnzp Inner Loop Test
+; 1 End Inner Loop Reset R2
+0001 010 010 0 00011 ; R2 <- R2 + R3
+; End Inner Loop
 
 0001 101 101 0 00110 ; R5 <- R5 + R6 quotient
 ; 3 subtract dividable part from R2
@@ -201,7 +199,7 @@
 0001 011 011 1 00001 ; R3 <- R3 + 1
 ; 1 End If
 
-0000 111   111011101 ; BRnzp Outer Loop Test
+0000 111   111011111 ; BRnzp Outer Loop Test
 
 ; Finilize
 ; 3 Correct Remainder Sign
