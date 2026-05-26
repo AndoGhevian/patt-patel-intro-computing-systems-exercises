@@ -1,3 +1,4 @@
+; opcodes should be UpperCase
                 .ORIG x3000
                 ; read maximum INPUTLEN characters
                 ; ignoring space and tabs until
